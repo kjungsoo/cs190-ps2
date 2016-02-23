@@ -85,6 +85,37 @@ class ViewController: UIViewController {
             print("Pressed \(key)")
         case Key.KeyAdd:
             print("Pressed \(key)")
+        case Key.KeyArc:
+            print("Pressed \(key)")
+        case Key.KeyCHS:
+            print("Pressed \(key)")
+        case Key.KeyCLR:
+            print("Pressed \(key)")
+        case Key.KeyCLx:
+            print("Pressed \(key)")
+        case Key.KeyCos:
+            print("Pressed \(key)")
+        case Key.KeyDiv:
+            print("Pressed \(key)")
+        case Key.KeyEEX:
+            print("Pressed \(key)")
+        case Key.KeyENT:
+            print("Pressed \(key)")
+        case Key.KeyExc:
+            print("Pressed \(key)")
+        case Key.KeyExp:
+            print("Pressed \(key)")
+        case Key.KeyInv:
+            print("Pressed \(key)")
+        case Key.KeyLn:
+            print("Pressed \(key)")
+        case Key.KeyLog:
+            print("Pressed \(key)")
+        case Key.KeyMul:
+            print("Pressed \(key)")
+        case Key.KeyPI:
+            print("Pressed \(key)")
+            
         default:
             print("\(__FUNCTION__) is unimplemented for key \(key)")
         }
