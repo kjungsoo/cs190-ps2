@@ -112,8 +112,53 @@ class CPUState {
     // Make use of the enums RegisterASpecialValues and RegisterBSpecialValues so that you don't have to hard
     // code "2" to mean a decimal point (similarly for the other special values).
     func canonicalize() {
-        let registerC = Register(fromDecimalString: "01000000000002")
+        
+        let registerA = registers[RegId.A.rawValue]
+        let registerB = registers[RegId.B.rawValue]
+        //var exponentIsNeg = false
+        var exponent = registerA.nibbles[0] + registerA.nibbles[1] * 10
+        var decimalStringforRegC: String
+        /*
+        print(registerB)
+        print(registerA)
+        */
+        var registerC: Register// = Register(fromDecimalString: "01000000000002")
+        //registers[RegId.C.rawValue] = registerC
+        
+        
+        if registerB.nibbles[2] == 9 { //switch to enum for blank (gives error, ask Brian)
+            //exponentIsNeg = true
+        //}
+        
+        //if exponentIsNeg == true {
+            exponent = 100 - exponent
+            if exponent > 99 {
+                exponent = 99
+            }
+            decimalStringforRegC = "9"
+            if exponent < 10 {
+                decimalStringforRegC = "09"
+            }
+            decimalStringforRegC = String(exponent) + decimalStringforRegC
+            print(decimalStringforRegC)
+        }
+        else {
+            decimalStringforRegC = "0"
+            if exponent < 10 {
+                decimalStringforRegC = "00"
+            }
+            decimalStringforRegC = String(exponent) + decimalStringforRegC
+            print(decimalStringforRegC)
+        }
+        
+        decimalStringforRegC = decimalStringforRegC + "00000000000"
+        print (decimalStringforRegC)
+        
+        registerC = Register(fromDecimalString: decimalStringforRegC)
         registers[RegId.C.rawValue] = registerC
+        
+        print(registerC)
+        //let exponentIsNegative = if nibble 2 of register B is 9 then the exponent is negative
     }
     
     // Displays positive or negative overflow value
