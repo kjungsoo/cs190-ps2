@@ -115,46 +115,86 @@ class CPUState {
         
         let registerA = registers[RegId.A.rawValue]
         let registerB = registers[RegId.B.rawValue]
-        //var exponentIsNeg = false
+        var registerC: Register
+        let minus = RegisterASpecialValues.Minus.rawValue
+        let blank = RegisterBSpecialValues.Blank.rawValue
+        let point = RegisterBSpecialValues.Point.rawValue
+        let empty = RegisterCSpecialValues.Empty.rawValue
+        
         var exponent = registerA.nibbles[0] + registerA.nibbles[1] * 10
         var decimalStringforRegC: String
-        /*
-        print(registerB)
+        var sigfig = 0
+        
         print(registerA)
-        */
-        var registerC: Register// = Register(fromDecimalString: "01000000000002")
-        //registers[RegId.C.rawValue] = registerC
-        
-        
-        if registerB.nibbles[2] == 9 { //switch to enum for blank (gives error, ask Brian)
-            //exponentIsNeg = true
-        //}
-        
-        //if exponentIsNeg == true {
+        print(registerB)
+
+        if registerA.nibbles[2] == minus {
             exponent = 100 - exponent
             if exponent > 99 {
                 exponent = 99
             }
-            decimalStringforRegC = "9"
+            decimalStringforRegC = String(minus)
             if exponent < 10 {
-                decimalStringforRegC = "09"
+                decimalStringforRegC = String(minus) + String(empty)
             }
-            decimalStringforRegC = String(exponent) + decimalStringforRegC
-            print(decimalStringforRegC)
+            decimalStringforRegC = decimalStringforRegC + String(exponent)
         }
+
         else {
-            decimalStringforRegC = "0"
+            decimalStringforRegC = String(empty)
             if exponent < 10 {
-                decimalStringforRegC = "00"
+                decimalStringforRegC = String(empty) + String(empty)
             }
-            decimalStringforRegC = String(exponent) + decimalStringforRegC
-            print(decimalStringforRegC)
+            decimalStringforRegC = decimalStringforRegC + String(exponent)
         }
         
-        decimalStringforRegC = decimalStringforRegC + "00000000000"
+        print (decimalStringforRegC)
+        
+        for i in ExponentLength ..< RegisterLength - 1 {
+            if registerB.nibbles[i] == blank {
+                decimalStringforRegC =  String(empty) + decimalStringforRegC
+                if i + 1 != RegisterLength && registerB.nibbles[i + 1] != blank {
+                    sigfig = i + 1
+                }
+            }
+            
+        }
+        print(sigfig)
+        print(decimalStringforRegC) //good for now; stops at the decimal
+        
+        for i in sigfig ..< RegisterLength - 1 {
+            decimalStringforRegC = String(registerA.nibbles[i]) + decimalStringforRegC
+        }
+        
+        if registerA.nibbles[RegisterLength - 1] == minus {
+            decimalStringforRegC = String(minus) + decimalStringforRegC
+        }
+        else {
+            decimalStringforRegC = String(empty) + decimalStringforRegC
+        }
+        
+        //decimalStringforRegC = decimalStringforRegC + "00000000000"
         print (decimalStringforRegC)
         
         registerC = Register(fromDecimalString: decimalStringforRegC)
+        /* use while loop until decimal is in index 11
+        if sigfig == RegisterLength - 1 {
+            if registerC.nibbles[2] == minus {
+                if registerC.nibbles[0] == 0 {
+                    registerC.nibbles[0] == 9
+                    registerC.nibbles[1] -= 1 //add if nibbles[1] == 9 then overflow
+                }
+                else {
+                    registerC.nibbles[0] -= 1
+                }
+            }
+            //-1 to exp; if neg already +1
+        }
+        else if sigfig != RegisterLength - 2 {
+            //+ exp until sigfig == registerlength - 2
+        }
+        */
+        
         registers[RegId.C.rawValue] = registerC
         
         print(registerC)

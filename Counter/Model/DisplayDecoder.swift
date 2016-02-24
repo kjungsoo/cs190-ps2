@@ -56,6 +56,10 @@ enum RegisterBSpecialValues: Nibble {
     case Blank = 0b1001 // In Register B, 9 in BCD has the interpretation of Blank.
 }
 
+enum RegisterCSpecialValues: Nibble{
+    case Empty = 0b000 // In my implementation I intend to use this a lot
+}
+
 // An array of the displayable characters is super-handy for converting integers to the corresponding characters.
 let displayableCharacters: [DisplayableCharacters] = [
     DisplayableCharacters.Char0,
