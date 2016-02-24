@@ -116,22 +116,19 @@ class CPUState {
         let registerA = registers[RegId.A.rawValue]
         let registerB = registers[RegId.B.rawValue]
         var registerC: Register
+        
         let minus = RegisterASpecialValues.Minus.rawValue
         let blank = RegisterBSpecialValues.Blank.rawValue
-        let point = RegisterBSpecialValues.Point.rawValue
         let empty = RegisterCSpecialValues.Empty.rawValue
         
         var exponent = registerA.nibbles[0] + registerA.nibbles[1] * 10
         var decimalStringforRegC: String
         var sigfig = 0
-        
-        print(registerA)
-        print(registerB)
 
         if registerA.nibbles[2] == minus {
             exponent = 100 - exponent
             if exponent > 99 {
-                exponent = 99
+                exponent = 99 //return overflow
             }
             decimalStringforRegC = String(minus)
             if exponent < 10 {
@@ -148,19 +145,14 @@ class CPUState {
             decimalStringforRegC = decimalStringforRegC + String(exponent)
         }
         
-        print (decimalStringforRegC)
-        
         for i in ExponentLength ..< RegisterLength - 1 {
             if registerB.nibbles[i] == blank {
                 decimalStringforRegC =  String(empty) + decimalStringforRegC
                 if i + 1 != RegisterLength && registerB.nibbles[i + 1] != blank {
-                    sigfig = i + 1
+                    sigfig = i + 1 //might need to pass on sigfig to adjustexponent() func, maybe not
                 }
             }
-            
         }
-        print(sigfig)
-        print(decimalStringforRegC) //good for now; stops at the decimal
         
         for i in sigfig ..< RegisterLength - 1 {
             decimalStringforRegC = String(registerA.nibbles[i]) + decimalStringforRegC
@@ -173,32 +165,49 @@ class CPUState {
             decimalStringforRegC = String(empty) + decimalStringforRegC
         }
         
-        //decimalStringforRegC = decimalStringforRegC + "00000000000"
-        print (decimalStringforRegC)
-        
         registerC = Register(fromDecimalString: decimalStringforRegC)
-        /* use while loop until decimal is in index 11
-        if sigfig == RegisterLength - 1 {
-            if registerC.nibbles[2] == minus {
-                if registerC.nibbles[0] == 0 {
-                    registerC.nibbles[0] == 9
-                    registerC.nibbles[1] -= 1 //add if nibbles[1] == 9 then overflow
-                }
-                else {
-                    registerC.nibbles[0] -= 1
-                }
+        registers[RegId.C.rawValue] = registerC
+    }
+    
+    func adjustexponent() {
+        var registerC = registers[RegId.C.rawValue]
+        let registerA = registers[RegId.A.rawValue]
+        let registerB = registers[RegId.B.rawValue]
+        
+        let minus = RegisterASpecialValues.Minus.rawValue
+        let blank = RegisterBSpecialValues.Blank.rawValue
+        let point = RegisterBSpecialValues.Point.rawValue
+        let empty = RegisterCSpecialValues.Empty.rawValue
+        
+        var tempholder: Nibble
+        
+        if registerB.nibbles[12] != point {
+            if registerB.nibbles[RegisterLength - 1] == point {
+                //move the decimal to the right, -1 for each positin moved
             }
-            //-1 to exp; if neg already +1
+            else {
+                //move the decimal to the left, +1 for each position moved
+            }
+        }
+        
+        /* use while loop until decimal is in index 11 //old code for adjusting decimal, use as reference if needed
+        if sigfig == RegisterLength - 1 {
+        if registerC.nibbles[2] == minus {
+        if registerC.nibbles[0] == 0 {
+        registerC.nibbles[0] == 9
+        registerC.nibbles[1] -= 1 //add if nibbles[1] == 9 then overflow
+        }
+        else {
+        registerC.nibbles[0] -= 1
+        }
+        }
+        //-1 to exp; if neg already +1
         }
         else if sigfig != RegisterLength - 2 {
-            //+ exp until sigfig == registerlength - 2
+        //+ exp until sigfig == registerlength - 2
         }
         */
         
-        registers[RegId.C.rawValue] = registerC
-        
-        print(registerC)
-        //let exponentIsNegative = if nibble 2 of register B is 9 then the exponent is negative
     }
     
     // Displays positive or negative overflow value
