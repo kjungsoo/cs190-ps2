@@ -164,12 +164,13 @@ class CPUState {
         else {
             decimalStringforRegC = String(empty) + decimalStringforRegC
         }
+        print(decimalStringforRegC)
         
         registerC = Register(fromDecimalString: decimalStringforRegC)
         registers[RegId.C.rawValue] = registerC
     }
     
-    func adjustexponent() {
+    func adjustexponent(sigfig: Int) {
         var registerC = registers[RegId.C.rawValue]
         let registerA = registers[RegId.A.rawValue]
         let registerB = registers[RegId.B.rawValue]
@@ -180,10 +181,45 @@ class CPUState {
         let empty = RegisterCSpecialValues.Empty.rawValue
         
         var tempholder: Nibble
+        var del_expo = 0
+        //var counter = 1
         
         if registerB.nibbles[12] != point {
             if registerB.nibbles[RegisterLength - 1] == point {
-                //move the decimal to the right, -1 for each positin moved
+                if registerC.nibbles[12] > 0 {
+                    //-1
+                    if registerC.nibbles[2] == minus {
+                        if registerC.nibbles[0] == 0 {
+                            registerC.nibbles[0] == 9
+                            registerC.nibbles[1] -= 1
+                        }
+                    }
+                    else if registerC.nibbles[2] == 0 && registerC.nibbles[0] == 0 && registerC.nibbles[1] == 0 {
+                        registerC.nibbles[2] = minus
+                        registerC.nibbles[0] = 9
+                        registerC.nibbles[1] = 9
+                    }
+                    else {
+                        registerC.nibbles[0] -= 1
+                    }
+                }
+                else {
+                    while registerC.nibbles[12] == 0 {
+                        tempholder = registerC.nibbles[12]
+                        registerC.nibbles.removeAtIndex(12)
+                        registerC.nibbles.insert(tempholder, atIndex: sigfig)
+                        del_expo += 1
+                    }
+                    //i think up to this point this is good, need to account for small pos -> neg,
+                    if registerC.nibbles[2] == minus {
+                        if del_expo == 10 {
+                            if registerC.nibbles[0] < UInt8(del_expo) {
+                                registerC.nibbles[1] -= 1
+                                registerC.nibbles[0] = registerC.nibbles[0] - UInt8(del_expo) + 10
+                            }
+                        }
+                    }
+                }
             }
             else {
                 //move the decimal to the left, +1 for each position moved
