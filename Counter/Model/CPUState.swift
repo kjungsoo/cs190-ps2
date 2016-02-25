@@ -120,36 +120,101 @@ class CPUState {
         let minus = RegisterASpecialValues.Minus.rawValue
         let blank = RegisterBSpecialValues.Blank.rawValue
         let empty = RegisterCSpecialValues.Empty.rawValue
+        let point = RegisterBSpecialValues.Point.rawValue
         
-        var exponent = registerA.nibbles[0] + registerA.nibbles[1] * 10
+        let exponent = registerA.nibbles[0] + registerA.nibbles[1] * 10
+        var exponentValue = Int(exponent)
         var decimalStringforRegC: String
+        
+        var registerB_decimalIndex = 0
+        var registerAnonzeroIndex = 0
+        var adjustDecimal: Int
         var sigfig = 0
-
-        if registerA.nibbles[2] == minus {
-            exponent = 100 - exponent
-            if exponent > 99 {
-                exponent = 99 //return overflow
+        
+        var tempholder: Nibble
+        var del_expo = 1
+        
+        //find the position of the decimal
+        for i in 0 ..< RegisterLength {
+            if registerB.nibbles[i] == point {
+                registerB_decimalIndex = i
+                break
             }
-            decimalStringforRegC = String(minus)
-            if exponent < 10 {
-                decimalStringforRegC = String(minus) + String(empty)
-            }
-            decimalStringforRegC = decimalStringforRegC + String(exponent)
         }
-
-        else {
-            decimalStringforRegC = String(empty)
-            if exponent < 10 {
-                decimalStringforRegC = String(empty) + String(empty)
+        //find position of the first non-zero number
+        for i in (1 ... RegisterLength - 2).reverse() {
+            if registerA.nibbles[i] > 0 {
+                registerAnonzeroIndex = i
+                break
             }
-            decimalStringforRegC = decimalStringforRegC + String(exponent)
+        }
+        //# of index adjustment required for decimal to be in same position as first non-zero
+        adjustDecimal = registerAnonzeroIndex - registerB_decimalIndex
+        
+        if registerA.nibbles[2] == minus {
+            exponentValue *= -1
+            exponentValue += adjustDecimal
+            if adjustDecimal > 0 {
+                if exponentValue >= 0 && exponentValue < 10 {
+                    decimalStringforRegC = String(empty) + String(empty) + String(exponentValue)
+                }
+                else if exponentValue >= 0 {
+                    decimalStringforRegC = String(empty) + String(exponentValue)
+                }
+                else {
+                    exponentValue = 100 + exponentValue
+                    if abs(exponentValue) < 10 {
+                        decimalStringforRegC = String(minus) + String(empty) + String(exponentValue)
+                    }
+                    else {
+                        decimalStringforRegC = String(minus) + String(exponentValue)
+                    }
+                }
+            }
+            else {
+                exponentValue = 100 + exponentValue
+                if abs(exponentValue) < 10 {
+                    decimalStringforRegC = String(minus) + String(empty) + String(exponentValue)
+                }
+                else {
+                    decimalStringforRegC = String(minus) + String(exponentValue)
+                }
+            }
+        }
+        else {
+            exponentValue += adjustDecimal
+            if adjustDecimal > 0 {
+                if exponentValue < 10 {
+                    decimalStringforRegC = String(empty) + String(empty) + String(exponentValue)
+                }
+                else {
+                    decimalStringforRegC = String(empty) + String(exponentValue)
+                }
+            }
+            else {
+                if exponentValue >= 0 && exponentValue < 10 {
+                    decimalStringforRegC = String(empty) + String(empty) + String(exponentValue)
+                }
+                else if exponentValue >= 0 {
+                    decimalStringforRegC = String(empty) + String(exponentValue)
+                }
+                else {
+                    exponentValue = 100 + exponentValue
+                    if abs(exponentValue) < 10 {
+                        decimalStringforRegC = String(minus) + String(empty) + String(exponentValue)
+                    }
+                    else {
+                        decimalStringforRegC = String(minus) + String(exponentValue)
+                    }
+                }
+            }
         }
         
         for i in ExponentLength ..< RegisterLength - 1 {
             if registerB.nibbles[i] == blank {
                 decimalStringforRegC =  String(empty) + decimalStringforRegC
                 if i + 1 != RegisterLength && registerB.nibbles[i + 1] != blank {
-                    sigfig = i + 1 //might need to pass on sigfig to adjustexponent() func, maybe not
+                    sigfig = i + 1
                 }
             }
         }
@@ -164,86 +229,17 @@ class CPUState {
         else {
             decimalStringforRegC = String(empty) + decimalStringforRegC
         }
-        print(decimalStringforRegC)
         
         registerC = Register(fromDecimalString: decimalStringforRegC)
+        
+        while registerC.nibbles[12] < 1 {
+            tempholder = registerC.nibbles[12]
+            registerC.nibbles.removeAtIndex(12)
+            registerC.nibbles.insert(tempholder, atIndex: sigfig)
+            del_expo += 1
+        }
+        
         registers[RegId.C.rawValue] = registerC
-    }
-    
-    func adjustexponent(sigfig: Int) {
-        var registerC = registers[RegId.C.rawValue]
-        let registerA = registers[RegId.A.rawValue]
-        let registerB = registers[RegId.B.rawValue]
-        
-        let minus = RegisterASpecialValues.Minus.rawValue
-        let blank = RegisterBSpecialValues.Blank.rawValue
-        let point = RegisterBSpecialValues.Point.rawValue
-        let empty = RegisterCSpecialValues.Empty.rawValue
-        
-        var tempholder: Nibble
-        var del_expo = 0
-        //var counter = 1
-        
-        if registerB.nibbles[12] != point {
-            if registerB.nibbles[RegisterLength - 1] == point {
-                if registerC.nibbles[12] > 0 {
-                    //-1
-                    if registerC.nibbles[2] == minus {
-                        if registerC.nibbles[0] == 0 {
-                            registerC.nibbles[0] == 9
-                            registerC.nibbles[1] -= 1
-                        }
-                    }
-                    else if registerC.nibbles[2] == 0 && registerC.nibbles[0] == 0 && registerC.nibbles[1] == 0 {
-                        registerC.nibbles[2] = minus
-                        registerC.nibbles[0] = 9
-                        registerC.nibbles[1] = 9
-                    }
-                    else {
-                        registerC.nibbles[0] -= 1
-                    }
-                }
-                else {
-                    while registerC.nibbles[12] == 0 {
-                        tempholder = registerC.nibbles[12]
-                        registerC.nibbles.removeAtIndex(12)
-                        registerC.nibbles.insert(tempholder, atIndex: sigfig)
-                        del_expo += 1
-                    }
-                    //i think up to this point this is good, need to account for small pos -> neg,
-                    if registerC.nibbles[2] == minus {
-                        if del_expo == 10 {
-                            if registerC.nibbles[0] < UInt8(del_expo) {
-                                registerC.nibbles[1] -= 1
-                                registerC.nibbles[0] = registerC.nibbles[0] - UInt8(del_expo) + 10
-                            }
-                        }
-                    }
-                }
-            }
-            else {
-                //move the decimal to the left, +1 for each position moved
-            }
-        }
-        
-        /* use while loop until decimal is in index 11 //old code for adjusting decimal, use as reference if needed
-        if sigfig == RegisterLength - 1 {
-        if registerC.nibbles[2] == minus {
-        if registerC.nibbles[0] == 0 {
-        registerC.nibbles[0] == 9
-        registerC.nibbles[1] -= 1 //add if nibbles[1] == 9 then overflow
-        }
-        else {
-        registerC.nibbles[0] -= 1
-        }
-        }
-        //-1 to exp; if neg already +1
-        }
-        else if sigfig != RegisterLength - 2 {
-        //+ exp until sigfig == registerlength - 2
-        }
-        */
-        
     }
     
     // Displays positive or negative overflow value

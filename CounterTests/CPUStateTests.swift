@@ -63,6 +63,11 @@ class CPUStateTests: XCTestCase {
         self.commonTestCanonicalize("91250000000902", stringB: "02009999999000", expectedC: "91250000000998")
     }
     
+    //user .003 x 10^-1; result 3.0 x 10^-4
+    func testCanonicalizeMyOwn() {
+        self.commonTestCanonicalize("00030000000901", stringB: "20009999999000", expectedC: "03000000000996")
+    }
+    
     // Tests of Register struct
     
     func testInitFromDecimalString() {
