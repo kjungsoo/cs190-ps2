@@ -149,7 +149,6 @@ class CPUState {
         var sigfig = 0
         
         var tempholder: Nibble
-        var del_expo = 1
         
         //find the position of the decimal in register B
         for i in 0 ..< RegisterLength {
@@ -176,13 +175,12 @@ class CPUState {
         else { //otherwise, find difference between first nonzero number and decimal to find change in exponent
             adjustDecimal = registerAnonzeroIndex! - registerB_decimalIndex
             if registerA.nibbles[ExponentLength - 1] == minus { //various cases of change in expo
-                exponentValue *= -1
-                exponentValue += adjustDecimal
+                exponentValue = -1 * exponentValue + adjustDecimal
                 if adjustDecimal > 0 {
-                    if exponentValue >= 0 && exponentValue < 10 { //then creates exponent in register C
+                    if exponentValue >= 0 && exponentValue < 10 { //depending on the cases
                         decimalStringforRegC = String(empty) + String(empty) + String(exponentValue)
-                    }
-                    else if exponentValue >= 0 { //depending on the cases
+                    } //creates exponent in register C
+                    else if exponentValue >= 0 { //more cases for each case...
                         decimalStringforRegC = String(empty) + String(exponentValue)
                     }
                     else {
@@ -232,10 +230,10 @@ class CPUState {
                         }
                     }
                 }
-            }
+            } //need to implement overflow and underflow to the above
         }
         //fills in blank spaces from register B as 0's in register C
-        for i in ExponentLength ..< RegisterLength - 1 { //needs exception handling; especially index out of range
+        for i in ExponentLength ..< RegisterLength - 1 {
             if registerB.nibbles[i] == blank {
                 decimalStringforRegC =  String(empty) + decimalStringforRegC
                 if i + 1 != RegisterLength && registerB.nibbles[i + 1] != blank {
@@ -262,7 +260,6 @@ class CPUState {
                 tempholder = registerC.nibbles[12]
                 registerC.nibbles.removeAtIndex(12)
                 registerC.nibbles.insert(tempholder, atIndex: sigfig)
-                del_expo += 1
             }
         }
         
