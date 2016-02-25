@@ -124,10 +124,11 @@ class CPUState {
         
         let exponent = registerA.nibbles[0] + registerA.nibbles[1] * 10
         var exponentValue = Int(exponent)
-        var decimalStringforRegC: String
+        var decimalStringforRegC: String = ""
         
         var registerB_decimalIndex = 0
-        var registerAnonzeroIndex = 0
+        var registerAnonzeroIndex: Int? = 0
+        var noNonzeroNumber = false
         var adjustDecimal: Int
         var sigfig = 0
         
@@ -142,61 +143,41 @@ class CPUState {
             }
         }
         //find position of the first non-zero number
-        for i in (1 ... RegisterLength - 2).reverse() {
+        for i in (ExponentLength ... RegisterLength - 2).reverse() {
             if registerA.nibbles[i] > 0 {
                 registerAnonzeroIndex = i
                 break
             }
+            if i == ExponentLength && registerA.nibbles[i] == 0 {
+                registerAnonzeroIndex = nil
+                noNonzeroNumber = true
+            }
         }
-        //# of index adjustment required for decimal to be in same position as first non-zero
-        adjustDecimal = registerAnonzeroIndex - registerB_decimalIndex
         
-        if registerA.nibbles[2] == minus {
-            exponentValue *= -1
-            exponentValue += adjustDecimal
-            if adjustDecimal > 0 {
-                if exponentValue >= 0 && exponentValue < 10 {
-                    decimalStringforRegC = String(empty) + String(empty) + String(exponentValue)
-                }
-                else if exponentValue >= 0 {
-                    decimalStringforRegC = String(empty) + String(exponentValue)
-                }
-                else {
-                    exponentValue = 100 + exponentValue
-                    if abs(exponentValue) < 10 {
-                        decimalStringforRegC = String(minus) + String(empty) + String(exponentValue)
-                    }
-                    else {
-                        decimalStringforRegC = String(minus) + String(exponentValue)
-                    }
-                }
-            }
-            else {
-                exponentValue = 100 + exponentValue
-                if abs(exponentValue) < 10 {
-                    decimalStringforRegC = String(minus) + String(empty) + String(exponentValue)
-                }
-                else {
-                    decimalStringforRegC = String(minus) + String(exponentValue)
-                }
-            }
+        if registerAnonzeroIndex == nil {
+            decimalStringforRegC = "000"
         }
         else {
-            exponentValue += adjustDecimal
-            if adjustDecimal > 0 {
-                if exponentValue < 10 {
-                    decimalStringforRegC = String(empty) + String(empty) + String(exponentValue)
-                }
-                else {
-                    decimalStringforRegC = String(empty) + String(exponentValue)
-                }
-            }
-            else {
-                if exponentValue >= 0 && exponentValue < 10 {
-                    decimalStringforRegC = String(empty) + String(empty) + String(exponentValue)
-                }
-                else if exponentValue >= 0 {
-                    decimalStringforRegC = String(empty) + String(exponentValue)
+            adjustDecimal = registerAnonzeroIndex! - registerB_decimalIndex
+            if registerA.nibbles[ExponentLength - 1] == minus {
+                exponentValue *= -1
+                exponentValue += adjustDecimal
+                if adjustDecimal > 0 {
+                    if exponentValue >= 0 && exponentValue < 10 {
+                        decimalStringforRegC = String(empty) + String(empty) + String(exponentValue)
+                    }
+                    else if exponentValue >= 0 {
+                        decimalStringforRegC = String(empty) + String(exponentValue)
+                    }
+                    else {
+                        exponentValue = 100 + exponentValue
+                        if abs(exponentValue) < 10 {
+                            decimalStringforRegC = String(minus) + String(empty) + String(exponentValue)
+                        }
+                        else {
+                            decimalStringforRegC = String(minus) + String(exponentValue)
+                        }
+                    }
                 }
                 else {
                     exponentValue = 100 + exponentValue
@@ -205,6 +186,34 @@ class CPUState {
                     }
                     else {
                         decimalStringforRegC = String(minus) + String(exponentValue)
+                    }
+                }
+            }
+            else {
+                exponentValue += adjustDecimal
+                if adjustDecimal > 0 {
+                    if exponentValue < 10 {
+                        decimalStringforRegC = String(empty) + String(empty) + String(exponentValue)
+                    }
+                    else {
+                        decimalStringforRegC = String(empty) + String(exponentValue)
+                    }
+                }
+                else {
+                    if exponentValue >= 0 && exponentValue < 10 {
+                        decimalStringforRegC = String(empty) + String(empty) + String(exponentValue)
+                    }
+                    else if exponentValue >= 0 {
+                        decimalStringforRegC = String(empty) + String(exponentValue)
+                    }
+                    else {
+                        exponentValue = 100 + exponentValue
+                        if abs(exponentValue) < 10 {
+                            decimalStringforRegC = String(minus) + String(empty) + String(exponentValue)
+                        }
+                        else {
+                            decimalStringforRegC = String(minus) + String(exponentValue)
+                        }
                     }
                 }
             }
@@ -232,11 +241,13 @@ class CPUState {
         
         registerC = Register(fromDecimalString: decimalStringforRegC)
         
-        while registerC.nibbles[12] < 1 {
-            tempholder = registerC.nibbles[12]
-            registerC.nibbles.removeAtIndex(12)
-            registerC.nibbles.insert(tempholder, atIndex: sigfig)
-            del_expo += 1
+        if noNonzeroNumber == false {
+            while registerC.nibbles[12] < 1 {
+                tempholder = registerC.nibbles[12]
+                registerC.nibbles.removeAtIndex(12)
+                registerC.nibbles.insert(tempholder, atIndex: sigfig)
+                del_expo += 1
+            }
         }
         
         registers[RegId.C.rawValue] = registerC
