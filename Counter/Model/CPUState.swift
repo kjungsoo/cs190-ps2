@@ -113,6 +113,22 @@ class CPUState {
     // code "2" to mean a decimal point (similarly for the other special values).
     func canonicalize() {
         
+        //This function was implemented by: 
+        //(1) First using register A and register B to determine the exponent for register C. This was done by
+        //finding how many positions the decimal must be moved to be on the same position of the first non-zero
+        //digit in register A (counting from the left). If the decimal was on the left of the first non-zero,
+        //then the difference was negative, if the decimal was on the right of the first non-zero,
+        //then the differene was positive. Depending on the various cases (i.e. the exponent stored in register A
+        //was originally negative/positive; if it remained negative/positive after adding the difference; etc)
+        //the exponents were 'saved' as a string in the form "9##" or "0##" where the #'s represented the
+        //exponent and 9/0 were the sign of the exponent.
+        //(2) Register B was then used to fill in register C with 0's for every 9 that were in register B
+        //This was done by adding the string format of register C to the string "0". Register A was then used
+        //to fill in register C with significant digits by saving the position of the last 9 in register B.
+        //(3) Register C is then saved as a list of 14 digits which (if there are non-zero numbers) is then
+        //sorted so that the first non-zero number is in the first digit position (index 12). This is then
+        //stored into the list of registers.
+        
         let registerA = registers[RegId.A.rawValue]
         let registerB = registers[RegId.B.rawValue]
         var registerC: Register
@@ -135,14 +151,14 @@ class CPUState {
         var tempholder: Nibble
         var del_expo = 1
         
-        //find the position of the decimal
+        //find the position of the decimal in register B
         for i in 0 ..< RegisterLength {
             if registerB.nibbles[i] == point {
                 registerB_decimalIndex = i
                 break
             }
         }
-        //find position of the first non-zero number
+        //find position of the first non-zero number in register A
         for i in (ExponentLength ... RegisterLength - 2).reverse() {
             if registerA.nibbles[i] > 0 {
                 registerAnonzeroIndex = i
@@ -153,20 +169,20 @@ class CPUState {
                 noNonzeroNumber = true
             }
         }
-        
+        //if there is no non zero number in register A, calculator must be blank
         if registerAnonzeroIndex == nil {
             decimalStringforRegC = "000"
         }
-        else {
+        else { //otherwise, find difference between first nonzero number and decimal to find change in exponent
             adjustDecimal = registerAnonzeroIndex! - registerB_decimalIndex
-            if registerA.nibbles[ExponentLength - 1] == minus {
+            if registerA.nibbles[ExponentLength - 1] == minus { //various cases of change in expo
                 exponentValue *= -1
                 exponentValue += adjustDecimal
                 if adjustDecimal > 0 {
-                    if exponentValue >= 0 && exponentValue < 10 {
+                    if exponentValue >= 0 && exponentValue < 10 { //then creates exponent in register C
                         decimalStringforRegC = String(empty) + String(empty) + String(exponentValue)
                     }
-                    else if exponentValue >= 0 {
+                    else if exponentValue >= 0 { //depending on the cases
                         decimalStringforRegC = String(empty) + String(exponentValue)
                     }
                     else {
@@ -189,7 +205,7 @@ class CPUState {
                     }
                 }
             }
-            else {
+            else { //another set of cases for change in expo
                 exponentValue += adjustDecimal
                 if adjustDecimal > 0 {
                     if exponentValue < 10 {
@@ -218,20 +234,20 @@ class CPUState {
                 }
             }
         }
-        
-        for i in ExponentLength ..< RegisterLength - 1 {
+        //fills in blank spaces from register B as 0's in register C
+        for i in ExponentLength ..< RegisterLength - 1 { //needs exception handling; especially index out of range
             if registerB.nibbles[i] == blank {
                 decimalStringforRegC =  String(empty) + decimalStringforRegC
                 if i + 1 != RegisterLength && registerB.nibbles[i + 1] != blank {
-                    sigfig = i + 1
+                    sigfig = i + 1 //finds where blanks ended in register B
                 }
             }
         }
-        
+        //picks up from register B and adds digits to register C from register A
         for i in sigfig ..< RegisterLength - 1 {
             decimalStringforRegC = String(registerA.nibbles[i]) + decimalStringforRegC
         }
-        
+        //determines sign
         if registerA.nibbles[RegisterLength - 1] == minus {
             decimalStringforRegC = String(minus) + decimalStringforRegC
         }
@@ -240,9 +256,9 @@ class CPUState {
         }
         
         registerC = Register(fromDecimalString: decimalStringforRegC)
-        
-        if noNonzeroNumber == false {
-            while registerC.nibbles[12] < 1 {
+        //after putting the decimal form of register C into a list, cleans the register
+        if noNonzeroNumber == false { //if nonzero exists in A
+            while registerC.nibbles[12] < 1 { //moves them up to the first digit position, index 12
                 tempholder = registerC.nibbles[12]
                 registerC.nibbles.removeAtIndex(12)
                 registerC.nibbles.insert(tempholder, atIndex: sigfig)
