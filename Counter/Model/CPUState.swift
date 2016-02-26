@@ -140,6 +140,7 @@ class CPUState {
         
         let exponent = registerA.nibbles[0] + registerA.nibbles[1] * 10
         var exponentValue = Int(exponent)
+        var negexponentValue: Int = 0
         var decimalStringforRegC: String = ""
         
         var registerB_decimalIndex = 0
@@ -184,22 +185,22 @@ class CPUState {
                         decimalStringforRegC = String(empty) + String(exponentValue)
                     }
                     else {
-                        exponentValue = 100 + exponentValue
-                        if abs(exponentValue) < 10 {
-                            decimalStringforRegC = String(minus) + String(empty) + String(exponentValue)
+                        negexponentValue = 100 + exponentValue
+                        if negexponentValue < 10 {
+                            decimalStringforRegC = String(minus) + String(empty) + String(negexponentValue)
                         }
                         else {
-                            decimalStringforRegC = String(minus) + String(exponentValue)
+                            decimalStringforRegC = String(minus) + String(negexponentValue)
                         }
                     }
                 }
                 else {
-                    exponentValue = 100 + exponentValue
-                    if abs(exponentValue) < 10 {
-                        decimalStringforRegC = String(minus) + String(empty) + String(exponentValue)
+                    negexponentValue = 100 + exponentValue
+                    if negexponentValue < 10 {
+                        decimalStringforRegC = String(minus) + String(empty) + String(negexponentValue)
                     }
                     else {
-                        decimalStringforRegC = String(minus) + String(exponentValue)
+                        decimalStringforRegC = String(minus) + String(negexponentValue)
                     }
                 }
             }
@@ -221,12 +222,12 @@ class CPUState {
                         decimalStringforRegC = String(empty) + String(exponentValue)
                     }
                     else {
-                        exponentValue = 100 + exponentValue
-                        if abs(exponentValue) < 10 {
-                            decimalStringforRegC = String(minus) + String(empty) + String(exponentValue)
+                        negexponentValue = 100 + exponentValue
+                        if negexponentValue < 10 {
+                            decimalStringforRegC = String(minus) + String(empty) + String(negexponentValue)
                         }
                         else {
-                            decimalStringforRegC = String(minus) + String(exponentValue)
+                            decimalStringforRegC = String(minus) + String(negexponentValue)
                         }
                     }
                 }
